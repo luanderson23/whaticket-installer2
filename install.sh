@@ -1,5 +1,21 @@
 #!/bin/bash
 
+# Função para perguntar ao usuário
+perguntar() {
+    echo "$1"
+    read -p "Digite o valor: " valor
+    echo $valor
+}
+
+# Perguntando a URL do projeto no GitHub
+url_github=$(perguntar "Qual é a URL do repositório no GitHub? Ex: https://github.com/SEU_USUARIO/whaticket-installer")
+
+# Perguntando a URL do frontend
+url_front=$(perguntar "Qual é a URL do frontend? Ex: http://SEU_FRONTEND:3000")
+
+# Perguntando a URL do backend
+url_back=$(perguntar "Qual é a URL do backend? Ex: http://SEU_BACKEND:8080")
+
 # Atualizando pacotes e instalando dependências
 echo "Atualizando pacotes e instalando dependências..."
 sudo apt-get update && sudo apt-get upgrade -y
@@ -36,11 +52,12 @@ else
 fi
 
 # Criando um diretório para o projeto
-echo "Criando diretório para o projeto Whaticket..."
-mkdir -p ~/whaticket && cd ~/whaticket
+echo "Clonando o projeto do GitHub a partir da URL fornecida..."
+git clone $url_github ~/whaticket
+cd ~/whaticket
 
-# Criando o arquivo docker-compose.yml para Whaticket
-echo "Gerando docker-compose.yml..."
+# Criando o arquivo docker-compose.yml com as URLs fornecidas
+echo "Gerando docker-compose.yml com URLs fornecidas..."
 cat <<EOL > docker-compose.yml
 version: "3.7"
 services:
@@ -60,6 +77,7 @@ services:
     image: garantesoftware/whaticket:latest
     environment:
       DATABASE_URL: mysql://whaticket:password@db:3306/whaticket
+      API_URL: $url_back
     ports:
       - "8080:8080"
     depends_on:
@@ -68,7 +86,7 @@ services:
   whaticket-frontend:
     image: garantesoftware/whaticket-frontend:latest
     environment:
-      API_URL: api.digitalzapstore.online
+      API_URL: $url_back
     ports:
       - "3000:3000"
     depends_on:
@@ -88,4 +106,7 @@ sudo docker volume create portainer_data
 sudo docker run -d -p 9000:9000 -p 8000:8000 --name=portainer --restart=always -v /var/run/docker.sock:/var/run/docker.sock -v portainer_data:/data portainer/portainer-ce
 
 # Exibindo mensagem de sucesso
-echo "Instalação concluída. Whaticket está rodando nas portas 8080 e 3000. O Portainer está disponível na porta 9000."
+echo "Instalação concluída!"
+echo "Frontend do Whaticket: $url_front"
+echo "Backend do Whaticket: $url_back"
+echo "Portainer está disponível em: http://SEU_SERVIDOR:9000"
